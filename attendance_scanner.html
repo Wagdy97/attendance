@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>حضور - Scanner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: #0a0f1e;
+    color: #fff;
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #1a1f3e 0%, #0d1224 100%);
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #1e2d5a;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+
+  .header h1 span {
+    color: #4e9eff;
+  }
+
+  .header-meta {
+    font-size: 12px;
+    color: #556;
+    margin-top: 2px;
+  }
+
+  .section {
+    padding: 20px 16px 8px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4e9eff;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+
+  /* Day selector */
+  .day-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .day-btn {
+    background: #111827;
+    border: 2px solid #1e2d5a;
+    border-radius: 14px;
+    padding: 14px 8px;
+    color: #8899bb;
+    font-family: 'Cairo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .day-btn:active { transform: scale(0.96); }
+
+  .day-btn.active {
+    background: #1a3a6e;
+    border-color: #4e9eff;
+    color: #4e9eff;
+    box-shadow: 0 0 16px rgba(78,158,255,0.25);
+  }
+
+  /* Date picker */
+  .date-input {
+    width: 100%;
+    background: #111827;
+    border: 2px solid #1e2d5a;
+    border-radius: 14px;
+    padding: 14px 16px;
+    color: #fff;
+    font-family: 'Cairo', sans-serif;
+    font-size: 16px;
+    direction: ltr;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .date-input:focus {
+    border-color: #4e9eff;
+  }
+
+  /* Scan button */
+  .scan-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #4e9eff, #1a5fc4);
+    border: none;
+    border-radius: 16px;
+    padding: 18px;
+    color: #fff;
+    font-family: 'Cairo', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(78,158,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .scan-btn:active { transform: scale(0.97); }
+  .scan-btn:disabled {
+    background: #1e2d5a;
+    color: #445;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* Scanner container */
+  #scanner-container {
+    display: none;
+    padding: 16px;
+  }
+
+  #scanner-box {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 2px solid #4e9eff;
+    box-shadow: 0 0 30px rgba(78,158,255,0.2);
+  }
+
+  #scanner-box video {
+    width: 100% !important;
+    border-radius: 0;
+  }
+
+  .stop-btn {
+    width: 100%;
+    background: #1e1e2e;
+    border: 2px solid #ff4e6a;
+    border-radius: 14px;
+    padding: 14px;
+    color: #ff4e6a;
+    font-family: 'Cairo', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.2s;
+  }
+
+  /* Result toast */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1a2a1a;
+    border: 2px solid #4eff88;
+    border-radius: 16px;
+    padding: 14px 24px;
+    color: #4eff88;
+    font-size: 15px;
+    font-weight: 700;
+    z-index: 999;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    text-align: center;
+    min-width: 260px;
+    max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  #toast.error {
+    background: #2a1a1a;
+    border-color: #ff4e6a;
+    color: #ff4e6a;
+  }
+
+  #toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Log */
+  .log-section {
+    padding: 0 16px 100px;
+  }
+
+  .log-item {
+    background: #111827;
+    border: 1px solid #1e2d5a;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .log-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #0d2a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .log-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #eee;
+  }
+
+  .log-meta {
+    font-size: 11px;
+    color: #556;
+    margin-top: 2px;
+  }
+
+  .count-badge {
+    margin-right: auto;
+    background: #1a3a6e;
+    color: #4e9eff;
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .empty-log {
+    text-align: center;
+    color: #334;
+    padding: 40px 0;
+    font-size: 14px;
+  }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 تسجيل <span>الحضور</span></h1>
+  <div class="header-meta" id="status-line">اختر اليوم والتاريخ للبدء</div>
+</div>
+
+<!-- Step 1: Day -->
+<div class="section">
+  <div class="section-title">اليوم</div>
+  <div class="day-grid">
+    <button class="day-btn" onclick="selectDay('Thursday', this)">الخميس</button>
+    <button class="day-btn" onclick="selectDay('Friday', this)">الجمعة</button>
+    <button class="day-btn" onclick="selectDay('Sunday', this)">الأحد</button>
+  </div>
+</div>
+
+<!-- Step 2: Date -->
+<div class="section">
+  <div class="section-title">التاريخ</div>
+  <input type="date" class="date-input" id="date-picker" />
+</div>
+
+<!-- Step 3: Scan -->
+<div class="section">
+  <button class="scan-btn" id="scan-btn" onclick="startScan()" disabled>
+    <span>📷</span> ابدأ المسح
+  </button>
+</div>
+
+<!-- Scanner -->
+<div id="scanner-container">
+  <div id="scanner-box"></div>
+  <button class="stop-btn" onclick="stopScan()">⏹ إيقاف المسح</button>
+</div>
+
+<!-- Log -->
+<div class="log-section">
+  <div class="section-title" style="padding: 0 0 10px 0;" id="log-title">السجل اليومي</div>
+  <div id="log-list"><div class="empty-log">لا يوجد حضور مسجل بعد</div></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const MEMBERS = {"MBR0001": "ابانوب ايهاب", "MBR0002": "ابرام صابح كميل", "MBR0003": "ادريانو كريم ابراهيم", "MBR0004": "ادهم مدحت فتحى", "MBR0005": "انطون اشرف صدقى", "MBR0006": "انطون حازم فوزى", "MBR0007": "بولا نادى عجايبى", "MBR0008": "تونى خير صداق", "MBR0009": "جوفانى جورج فوزى", "MBR0010": "ديفيد ايمن زكى", "MBR0011": "ستيفين ابراهيم سعيد", "MBR0012": "كاراس كرم ابراهيم", "MBR0013": "كيرلس جون وحيد", "MBR0014": "كيرلس روماني نظير", "MBR0015": "كيرلس هاني نصيف", "MBR0016": "مارسلينو عماد مكاريوس", "MBR0017": "مارك وليد كرم", "MBR0018": "ماريو رامي سمير", "MBR0019": "مايكل سامح ابراهيم", "MBR0020": "مايكل ياسر عازر", "MBR0021": "مينا جرجس عزت", "MBR0022": "مينا جون وحيد", "MBR0023": "مينا سامح ابراهيم", "MBR0024": "مينا نبيل مسعود", "MBR0025": "يوسف عماد لويس", "MBR0026": "يسى ملاك فهيم", "MBR0027": "ايريني رضا", "MBR0028": "ايريني عادل راضي", "MBR0029": "ايريني وائل سمير", "MBR0030": "ايلاريا طلعت عطية", "MBR0031": "ايلاريا يونان رزق", "MBR0032": "بسنت وصفي", "MBR0033": "جوستينا جميل صدقى", "MBR0034": "جولى هانى مجدى", "MBR0035": "جومانا ايمن فتحي", "MBR0036": "جومانا سامى ثابت", "MBR0037": "جومانا ماجد رمزى", "MBR0038": "جونير رمسيس سمير", "MBR0039": "جويس هشام", "MBR0040": "جيسيكا اسامة", "MBR0041": "چيسيكا جمال ابراهيم", "MBR0042": "ساندي مينا سعد", "MBR0043": "ساندي نبيل حبيب", "MBR0044": "سمايل ابراهيم ناثان", "MBR0045": "ڤيرينا ميخائيل القس مكسيموس", "MBR0046": "كارين رأفت شوقى", "MBR0047": "كارين رياض", "MBR0048": "كرستين عماد", "MBR0049": "كريستينا سعيد ميلاد", "MBR0050": "لميس سامح شحاتة", "MBR0051": "لوچي مدحت بباوى", "MBR0052": "مارسيل مجدي كمال", "MBR0053": "مارلي فتحي معوض", "MBR0054": "مارتينا رومانى", "MBR0055": "مريم عاطف", "MBR0056": "مريم منير يوسف", "MBR0057": "مريم ميلاد ناجح", "MBR0058": "مريم نشأت لبيب", "MBR0059": "ميرال اشرف صدقى", "MBR0060": "ميرنا صابح كميل", "MBR0061": "ميرولا ايمن لبيب", "MBR0062": "ميرولا وجدي نسيم", "MBR0063": "مهرائيل عادل", "MBR0064": "ناردين عزت", "MBR0065": "هناء عاطف", "MBR0066": "هيلانة حاتم امين", "MBR0067": "يوستينا رؤوف فوزي", "MBR0068": "يوستينا نبيل حبيب"};
+
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzmEDJlppOOpHD5aYFNhnS_oesUUuHfnoJoeKZwGDN56SN9q82HmgmeOvewvUj5H9T2sQ/exec";
+
+let selectedDay = null;
+let selectedDate = null;
+let scanner = null;
+let scanning = false;
+let sessionLog = [];
+let lastScanned = null;
+let lastScannedTime = 0;
+
+// Set default date to today
+const today = new Date();
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth()+1).padStart(2,'0');
+const dd = String(today.getDate()).padStart(2,'0');
+document.getElementById('date-picker').value = `${yyyy}-${mm}-${dd}`;
+selectedDate = `${yyyy}-${mm}-${dd}`;
+
+document.getElementById('date-picker').addEventListener('change', function() {
+  selectedDate = this.value;
+  checkReady();
+});
+
+function selectDay(day, btn) {
+  selectedDay = day;
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  checkReady();
+}
+
+function checkReady() {
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = !(selectedDay && selectedDate);
+  if (selectedDay && selectedDate) {
+    const dayAr = {'Thursday':'الخميس','Friday':'الجمعة','Sunday':'الأحد'}[selectedDay];
+    document.getElementById('status-line').textContent = `${dayAr} — ${selectedDate}`;
+  }
+}
+
+function startScan() {
+  document.getElementById('scanner-container').style.display = 'block';
+  document.getElementById('scanner-container').scrollIntoView({behavior:'smooth'});
+
+  scanner = new Html5Qrcode("scanner-box");
+  scanning = true;
+
+  scanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 240, height: 240 } },
+    onScanSuccess,
+    () => {}
+  ).catch(err => {
+    showToast("❌ لا يمكن الوصول للكاميرا", true);
+  });
+}
+
+function stopScan() {
+  if (scanner && scanning) {
+    scanner.stop().then(() => {
+      document.getElementById('scanner-container').style.display = 'none';
+      scanning = false;
+    });
+  }
+}
+
+async function onScanSuccess(decodedText) {
+  const now = Date.now();
+  if (decodedText === lastScanned && now - lastScannedTime < 3000) return;
+  lastScanned = decodedText;
+  lastScannedTime = now;
+
+  const name = MEMBERS[decodedText];
+  if (!name) {
+    showToast("⚠️ QR غير معروف", true);
+    return;
+  }
+
+  // Check duplicate in session
+  const alreadyLogged = sessionLog.find(l => l.id === decodedText && l.date === selectedDate && l.day === selectedDay);
+  if (alreadyLogged) {
+    showToast(`⚠️ ${name} — تم تسجيله مسبقاً`  , true);
+    return;
+  }
+
+  showToast(`✅ ${name}`);
+  
+  // Add to session log immediately
+  sessionLog.unshift({ id: decodedText, name, day: selectedDay, date: selectedDate, time: new Date().toLocaleTimeString('ar-EG') });
+  renderLog();
+
+  // Send to Google Sheets
+  sendToSheet(decodedText, name);
+}
+
+async function sendToSheet(memberId, name) {
+  if (APPS_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbzmEDJlppOOpHD5aYFNhnS_oesUUuHfnoJoeKZwGDN56SN9q82HmgmeOvewvUj5H9T2sQ/exec") {
+    console.log("Demo mode — would send:", { memberId, name, day: selectedDay, date: selectedDate });
+    return;
+  }
+  try {
+    const url = `${APPS_SCRIPT_URL}?id=${encodeURIComponent(memberId)}&day=${selectedDay}&date=${encodeURIComponent(selectedDate)}`;
+    await fetch(url, { method: 'GET', mode: 'no-cors' });
+  } catch(e) {
+    console.error("Sheet error:", e);
+  }
+}
+
+function renderLog() {
+  const list = document.getElementById('log-list');
+  if (sessionLog.length === 0) {
+    list.innerHTML = '<div class="empty-log">لا يوجد حضور مسجل بعد</div>';
+    return;
+  }
+  document.getElementById('log-title').textContent = `السجل اليومي (${sessionLog.length})`;
+  list.innerHTML = sessionLog.map(l => `
+    <div class="log-item">
+      <div class="log-icon">✅</div>
+      <div>
+        <div class="log-name">${l.name}</div>
+        <div class="log-meta">${l.time} — ${l.date}</div>
+      </div>
+      <div class="count-badge">${{'Thursday':'الخميس','Friday':'الجمعة','Sunday':'الأحد'}[l.day]}</div>
+    </div>
+  `).join('');
+}
+
+let toastTimer;
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error show' : 'show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = isError ? 'error' : '', 2500);
+}
+</script>
+</body>
+</html>
