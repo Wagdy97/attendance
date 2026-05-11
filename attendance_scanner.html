@@ -420,10 +420,6 @@ async function onScanSuccess(decodedText) {
 }
 
 async function sendToSheet(memberId, name) {
-  if (!APPS_SCRIPT_URL) {
-    console.log("No URL set");
-    return;
-  }
   try {
     const url = `${APPS_SCRIPT_URL}?id=${encodeURIComponent(memberId)}&day=${selectedDay}&date=${encodeURIComponent(selectedDate)}`;
     await fetch(url, { method: 'GET', mode: 'no-cors' });
