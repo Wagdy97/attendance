@@ -420,8 +420,8 @@ async function onScanSuccess(decodedText) {
 }
 
 async function sendToSheet(memberId, name) {
-  if (APPS_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbzmEDJlppOOpHD5aYFNhnS_oesUUuHfnoJoeKZwGDN56SN9q82HmgmeOvewvUj5H9T2sQ/exec") {
-    console.log("Demo mode — would send:", { memberId, name, day: selectedDay, date: selectedDate });
+  if (!APPS_SCRIPT_URL) {
+    console.log("No URL set");
     return;
   }
   try {
